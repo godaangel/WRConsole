@@ -24,13 +24,14 @@ class WRPrint {
   }
 
   static _doPrint(LogModel _logModel) async {
-    print('WRConsole: [${_logModel.logType}] ${_logModel.conetent}');
     if(WRConsoleStatic.context != null) {
       try {
         Provider.of<WRConsoleGlobalProvider>(WRConsoleStatic.context, listen: false).setConsoleLog(_logModel);
       } catch (e) {
-        print(e);
+        
       }
+    }else {
+      WRConsoleStatic.setBeforeConsole(_logModel);
     }
   }
 }

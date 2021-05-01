@@ -1,326 +1,266 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-typedef OnBuildNode = Widget Function(
-  JsonNode parent,
-  String nodeName,
-  dynamic nodeValue,
-);
+class JsonViewerWidget extends StatefulWidget {
 
-class JsonViewerRoot extends StatefulWidget {
-  JsonViewerRoot({
-    /// json object
-    /// 要展示的对象
-    @required this.jsonObj,
+  final Map<String, dynamic> jsonObj;
+  final bool notRoot;
 
-    /// Auto-expand level
-    /// 自动展开层级
-    this.expandDeep = 2,
-
-    /// Build node callback
-    /// 构建节点的回调
-    this.onBuildNode,
-  }) {
-    if (this.onBuildNode == null) {
-      this.onBuildNode = this.onBuildNodeDefault;
-    }
-  }
-
-  final dynamic jsonObj;
-  final int expandDeep;
-  OnBuildNode onBuildNode;
-
-  /// 默认的构建节点的回调, 当需要创建新的节点时触发
-  Widget onBuildNodeDefault(
-    JsonNode parent,
-    String nodeName,
-    dynamic nodeValue,
-  ) {
-    JsonNode node;
-    double leftOffset;
-    if (nodeValue == null) {
-      node = JsonViewerNode();
-    } else if (nodeValue is Map) {
-      node = JsonViewerMapNode();
-      leftOffset = 10;
-    } else if (nodeValue is List) {
-      node = JsonViewerListNode();
-      leftOffset = 10;
-    } else {
-      node = JsonViewerNode();
-      leftOffset = 0;
-    }
-    node.root = parent != null ? parent.root : this;
-    node.parent = parent;
-    node.nodeName = nodeName;
-    node.nodeValue = nodeValue;
-    node.leftOffset = leftOffset;
-    node.expandDeep = parent != null ? parent.expandDeep - 1 : this.expandDeep;
-    return node;
-  }
+  JsonViewerWidget (this.jsonObj, {this.notRoot});
 
   @override
-  State<StatefulWidget> createState() => JsonViewerRootState();
+  JsonViewerWidgetState createState() => new JsonViewerWidgetState();
 }
 
-class JsonViewerRootState extends State<JsonViewerRoot> {
-  JsonViewerRootState();
+class JsonViewerWidgetState extends State<JsonViewerWidget> {
 
-  @override
-  void initState() {
-    super.initState();
-  }
+  Map<String, bool> openFlag = Map();
 
   @override
   Widget build(BuildContext context) {
-    return this.widget.onBuildNode(null, "[root]", this.widget.jsonObj);
-  }
-}
-
-abstract class JsonNode<T> implements Widget {
-  /// 最顶级的
-  JsonViewerRoot root;
-
-  /// 上一个节点
-  JsonNode parent;
-
-  /// 当前节点名
-  String nodeName;
-
-  /// 当前节点值
-  T nodeValue;
-
-  /// 左边偏移值
-  double leftOffset;
-
-  /// 自动展开层次, 每次构建节点减1
-  int expandDeep;
-}
-
-abstract class JsonOpenNode implements Widget {
-  bool isOpen = false;
-
-  List<Widget> buildChild();
-}
-
-class JsonViewerMapNode extends StatefulWidget
-    implements JsonNode<Map<String, dynamic>>, JsonOpenNode {
-  @override
-  State<StatefulWidget> createState() => JsonViewerMapNodeState();
-
-  @override
-  JsonViewerRoot root;
-  @override
-  JsonNode parent;
-  @override
-  String nodeName;
-  @override
-  Map<String, dynamic> nodeValue;
-
-  @override
-  bool isOpen = false;
-
-  @override
-  double leftOffset;
-
-  @override
-  List<Widget> buildChild() {
-    List<Widget> result = <Widget>[];
-    nodeValue.forEach((k, v) {
-      result.add(root.onBuildNode(this, k, v));
-    });
-    return result;
-  }
-
-  @override
-  int expandDeep;
-}
-
-/// map类型的节点
-/// 如: {"key":value}
-class JsonViewerMapNodeState extends State<JsonViewerMapNode> {
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    widget.isOpen = widget.expandDeep > 0;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    Widget result = GestureDetector(
-        onTap: () {
-          this.setState(() {
-            widget.isOpen = !widget.isOpen;
-          });
-        },
-        child: Row(
-          children: <Widget>[
-            Icon(widget.isOpen ? Icons.arrow_drop_down : Icons.arrow_right),
-            Text(
-              widget.nodeName,
-              style: TextStyle(color: Colors.indigo),
-            )
-          ],
-        ));
-    if (widget.isOpen) {
-      result = Column(
-        children: <Widget>[
-          result,
-          Padding(
-            padding: EdgeInsets.only(left: widget.leftOffset),
-            child: Column(
-              children: widget.buildChild(),
-            ),
-          )
-        ],
-      );
+    if(widget.notRoot??false){
+      return 
+        Container(
+          padding: EdgeInsets.only(left: 14.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: _getList())
+        );
     }
-
-    return result;
-  }
-}
-
-/// list类型的节点
-/// 如: [value1,value2]
-class JsonViewerListNode extends StatefulWidget
-    implements JsonNode<List<dynamic>>, JsonOpenNode {
-  @override
-  State<StatefulWidget> createState() => JsonViewerListNodeState();
-
-  @override
-  JsonViewerRoot root;
-  @override
-  JsonNode parent;
-  @override
-  String nodeName;
-  @override
-  List<dynamic> nodeValue;
-
-  @override
-  bool isOpen = false;
-
-  @override
-  double leftOffset;
-
-  @override
-  List<Widget> buildChild() {
-    List<Widget> result = <Widget>[];
-    var i = 0;
-    nodeValue.forEach((v) {
-      result.add(root.onBuildNode(this, "[$i]", v));
-      i++;
-    });
-    return result;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: _getList());
   }
 
-  @override
-  int expandDeep;
-}
-
-class JsonViewerListNodeState extends State<JsonViewerListNode> {
-  @override
-  void initState() {
-    super.initState();
-    widget.isOpen = widget.expandDeep > 0;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    Widget result = GestureDetector(
-        onTap: () {
-          this.setState(() {
-            widget.isOpen = !widget.isOpen;
-          });
-        },
-        child: Row(
-          children: <Widget>[
-            Icon(widget.isOpen ? Icons.arrow_drop_down : Icons.arrow_right),
-            Text(
-              widget.nodeName,
-              style: TextStyle(color: Colors.deepPurple),
-            ),
-            Text(
-              " [${widget.nodeValue.length}]",
-              style: TextStyle(color: Colors.indigoAccent),
-            ),
-          ],
-        ));
-    if (widget.isOpen) {
-      result = Column(
-        children: <Widget>[
-          result,
-          Padding(
-            padding: EdgeInsets.only(left: widget.leftOffset),
-            child: Column(
-              children: widget.buildChild(),
-            ),
-          )
-        ],
-      );
-    }
-
-    return result;
-  }
-}
-
-class JsonViewerNode extends StatelessWidget implements JsonNode {
-  @override
-  Widget build(BuildContext context) {
-    var color = Colors.black;
-    if (this.nodeValue == null) {
-      color = Colors.redAccent;
-    } else {
-      switch (this.nodeValue.runtimeType) {
-        case bool:
-          color = Colors.teal;
-          break;
-        case int:
-          color = Colors.lightGreen;
-          break;
-      }
-    }
-
-    return Padding(
-      padding: EdgeInsets.only(left: 24),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onLongPress: () async {
-          await Clipboard.setData(ClipboardData(text: '${this.nodeValue.toString()}'));
-          return;
-        },
-        child: Row(
+  _getList(){
+    List<Widget> list = List();
+    for(MapEntry entry in widget.jsonObj.entries){
+      bool ex = isExtensible(entry.value);
+      bool ink = isInkWell(entry.value);
+      list.add(
+        Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              this.nodeName,
-              style: TextStyle(color: Colors.black54),
-            ),
-            Text(" : "),
-            Expanded(child: Text(
-              this.nodeValue == null ? "null" : this.nodeValue.toString(),
-              style: TextStyle(color: color),
-            ),),
+          ex?((openFlag[entry.key]??false)?Icon(Icons.arrow_drop_down, size: 14, color: Colors.grey[700]):Icon(Icons.arrow_right, size: 14, color: Colors.grey[700])):const Icon(Icons.arrow_right, color: Color.fromARGB(0, 0, 0, 0),size: 14,),
+          (ex&&ink)?InkWell(
+            child: Text(entry.key, style:TextStyle(color: Colors.purple[900])),
+            onTap: (){
+              setState(() {
+                openFlag[entry.key] = !(openFlag[entry.key]??false);
+              });
+            }
+          ):Text(entry.key, style:TextStyle(color: entry.value==null?Colors.grey:Colors.purple[900])),
+          Text(':', style: TextStyle(color: Colors.grey),),
+          const SizedBox(width: 3),
+          getValueWidget(entry)
+        ],)
+      );
+      list.add(const SizedBox(height: 4));
+      if(openFlag[entry.key]??false){
+        list.add(getContentWidget(entry.value));
+      }
+    }
+    return list;
+  }
+
+  static getContentWidget(dynamic content){
+    if(content is List){
+      return JsonArrayViewerWidget(content, notRoot: true);
+    }else{
+      return JsonViewerWidget(content, notRoot: true);
+    }
+  }
+
+  static isInkWell(dynamic content){
+    if(content == null){
+      return false;
+    }else if (content is int){
+      return false;
+    }else if (content is String) {
+      return false;
+    } else if (content is bool) {
+      return false;
+    } else if (content is double) {
+      return false;
+    } else if(content is List){
+      if(content.isEmpty){
+        return false;
+      }else {
+        return true;
+      }
+    }
+    return true;
+  }
+
+  getValueWidget(MapEntry entry){
+    if(entry.value == null){
+      return Expanded(child: Text('undefined', style: TextStyle(color: Colors.grey),));
+    }else if (entry.value is int){
+      return Expanded(child: SelectableText(entry.value.toString(), style: TextStyle(color: Colors.teal),));
+    }else if (entry.value is String) {
+      return Expanded(child: SelectableText('\"'+entry.value+'\"', style: TextStyle(color: Colors.redAccent),));
+    } else if (entry.value is bool) {
+      return Expanded(child: SelectableText(entry.value.toString(), style: TextStyle(color: Colors.purple),));
+    } else if (entry.value is double) {
+      return Expanded(child: SelectableText(entry.value.toString(), style: TextStyle(color: Colors.teal),));
+    } else if(entry.value is List){
+      if(entry.value.isEmpty){
+        return Text('Array[0]', style: TextStyle(color: Colors.grey),);
+      }else {
+        return InkWell(
+            child: Text('Array<${getTypeName(entry.value[0])}>[${entry.value.length}]', style: TextStyle(color: Colors.grey),),
+            onTap: (){
+              setState(() {
+                openFlag[entry.key] = !(openFlag[entry.key]??false);
+              });
+            });
+      }
+    }
+    return InkWell(
+      child: Text('Object', style: TextStyle(color: Colors.grey),),
+      onTap: (){
+        setState(() {
+          openFlag[entry.key] = !(openFlag[entry.key]??false);
+        });
+      });
+  }
+
+  static isExtensible(dynamic content){
+    if(content == null){
+      return false;
+    }else if(content is int){
+      return false;
+    }else if (content is String) {
+      return false;
+    } else if (content is bool) {
+      return false;
+    } else if (content is double) {
+      return false;
+    }
+    return true;
+  }
+
+  static getTypeName(dynamic content){
+    if (content is int){
+      return 'int';
+    }else if (content is String) {
+      return 'String';
+    } else if (content is bool) {
+      return 'bool';
+    } else if (content is double) {
+      return 'double';
+    } else if(content is List){
+      return 'List';
+    }
+    return 'Object';
+  }
+
+}
+
+class JsonArrayViewerWidget extends StatefulWidget {
+
+  final List<dynamic> jsonArray;
+
+  final bool notRoot;
+
+  JsonArrayViewerWidget (this.jsonArray, {this.notRoot});
+
+  @override
+  _JsonArrayViewerWidgetState createState() => new _JsonArrayViewerWidgetState();
+}
+
+class _JsonArrayViewerWidgetState extends State<JsonArrayViewerWidget> {
+
+  List<bool> openFlag;
+
+  @override
+  Widget build(BuildContext context) {
+    if(widget.notRoot??false){
+      return Container(
+          padding: EdgeInsets.only(left: 14.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: _getList())
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: _getList());
+  }
+
+  @override
+  void initState(){
+    super.initState();
+    openFlag = List(widget.jsonArray.length);
+  }
+
+  _getList(){
+    List<Widget> list = List();
+    int i = 0;
+    for(dynamic content in widget.jsonArray){
+      bool ex = JsonViewerWidgetState.isExtensible(content);
+      bool ink = JsonViewerWidgetState.isInkWell(content);
+      list.add(
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            ex?((openFlag[i]??false)?Icon(Icons.arrow_drop_down, size: 14, color: Colors.grey[700]):Icon(Icons.arrow_right, size: 14, color: Colors.grey[700])):const Icon(Icons.arrow_right, color: Color.fromARGB(0, 0, 0, 0),size: 14,),
+            (ex&&ink)?getInkWell(i):Text('[$i]', style:TextStyle(color: content==null?Colors.grey:Colors.purple[900])),
+            Text(':', style: TextStyle(color: Colors.grey),),
+            const SizedBox(width: 3),
+            getValueWidget(content, i)
           ],
-        ),
-      ),
+        )
+      );
+      list.add(const SizedBox(height: 4));
+      if(openFlag[i]??false){
+        list.add(JsonViewerWidgetState.getContentWidget(content));
+      }
+      i++;
+    }
+    return list;
+  }
+
+  getInkWell(int index){
+    return InkWell(
+      child: Text('[$index]', style:TextStyle(color: Colors.purple[900])),
+      onTap: (){
+        setState(() {
+          openFlag[index] = !(openFlag[index]??false);
+        });
+      }
     );
   }
 
-  @override
-  JsonViewerRoot root;
-  @override
-  JsonNode parent;
-  @override
-  String nodeName;
-
-  @override
-  var nodeValue;
-
-  @override
-  double leftOffset;
-
-  @override
-  int expandDeep;
+  getValueWidget(dynamic content, int index){
+    if(content == null){
+      return Expanded(child: Text('undefined', style: TextStyle(color: Colors.grey),));
+    }else if (content is int){
+      return Expanded(child: Text(content.toString(), style: TextStyle(color: Colors.teal),));
+    }else if (content is String) {
+      return Expanded(child: Text('\"'+content+'\"', style: TextStyle(color: Colors.redAccent),));
+    } else if (content is bool) {
+      return Expanded(child: Text(content.toString(), style: TextStyle(color: Colors.purple),));
+    } else if (content is double) {
+      return Expanded(child: Text(content.toString(), style: TextStyle(color: Colors.teal),));
+    } else if(content is List){
+      if(content.isEmpty){
+        return Text('Array[0]', style: TextStyle(color: Colors.grey),);
+      }else {
+        return InkWell(
+          child: Text('Array<${JsonViewerWidgetState.getTypeName(content)}>[${content.length}]', style: TextStyle(color: Colors.grey),),
+          onTap: (){
+            setState(() {
+              openFlag[index] = !(openFlag[index]??false);
+            });
+          });
+      }
+    }
+    return InkWell(
+      child: Text('Object', style: TextStyle(color: Colors.grey),),
+      onTap: (){
+        setState(() {
+          openFlag[index] = !(openFlag[index]??false);
+        });
+      });
+  }
 }

@@ -4,7 +4,22 @@ import 'package:wrconsole/wrconsole.dart';
 import 'second_page.dart';
 
 void main() {
-  runApp(MyApp());
+  WRConsole.runApp(MyApp());
+  // WRConsole.runApp(() => runApp(MyApp()));
+  // runApp(MyApp());
+  // runZonedGuarded(
+  //   () => runApp(MyApp()),
+  //   // 处理Zone中的未捕获异常
+  //   (Object error, StackTrace stack) async {
+  //     // WRPrint.error(error);
+  //   },
+  //   // 拦截日志输出
+  //   zoneSpecification: ZoneSpecification(
+  //     print: (Zone self, ZoneDelegate parent, Zone zone, String line) async {
+  //       // WRPrint.log(line);
+  //     },
+  //   ),
+  // );
 }
 
 class MyApp extends StatelessWidget {
@@ -42,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
 
   @override
   void initState() {
-    WRConsole.show(context);
+    WRConsole.init(context);
     super.initState();
   }
 
@@ -58,7 +73,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           children: <Widget>[
             GestureDetector(
               onTap: () {
-                WRPrint.log('点击跳转二级页面');
+                print('点击跳转二级页面');
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -79,7 +94,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                 if(!showConsole) {
                   WRConsole.dispose();
                 }else{
-                  WRConsole.show(context);
+                  WRConsole.init(context);
                 }
                 setState(() {
                   

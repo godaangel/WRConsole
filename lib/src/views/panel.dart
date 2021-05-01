@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wrconsole/src/provider/global_provider.dart';
 import 'package:wrconsole/src/widget/panel/panel_theme.dart';
+import 'package:wrconsole/src/widget/panel/system_info.dart';
 
-import 'panel/log.dart';
-import 'panel/network.dart';
+import '../widget/panel/log.dart';
+import '../widget/panel/network.dart';
 
 class WRConsolePanel extends StatefulWidget {
   final WRConsoleGlobalProvider globalProvider;
@@ -18,13 +19,19 @@ class WRConsolePanel extends StatefulWidget {
 
 class _WRConsolePanelState extends State<WRConsolePanel> {
   TabController _tabController;
+  WRConsoleGlobalProvider _globalProvider;
 
   @override
   void initState() {
+    _globalProvider = Provider.of<WRConsoleGlobalProvider>(context, listen: false);
     _tabController = TabController(
-      length: 2,
+      length: 3,
       vsync: ScrollableState(),
     );
+    _tabController.addListener(() {
+      setState(() {});
+    });
+    _globalProvider.insertInitLog();
     super.initState();
   }
 
@@ -40,7 +47,7 @@ class _WRConsolePanelState extends State<WRConsolePanel> {
               bottom: 0,
               child: GestureDetector(
                 onTap: () {
-                  Provider.of<WRConsoleGlobalProvider>(context, listen: false)
+                  _globalProvider
                       ?.panelEntry
                       ?.remove();
                 },
@@ -59,7 +66,7 @@ class _WRConsolePanelState extends State<WRConsolePanel> {
                 height: MediaQuery.of(context).size.height * 0.8,
                 color: Colors.white,
                 child: DefaultTabController(
-                  length: 2,
+                  length: _tabController.length,
                   child: Container(
                     height: MediaQuery.of(context).size.height * 0.8,
                     child: Column(
@@ -76,6 +83,9 @@ class _WRConsolePanelState extends State<WRConsolePanel> {
                               ),
                               Tab(
                                 text: "network",
+                              ),
+                              Tab(
+                                text: "system",
                               )
                             ],
                           ),
@@ -88,17 +98,18 @@ class _WRConsolePanelState extends State<WRConsolePanel> {
                           children: [
                             WRConsoleLogPanel(),
                             WRConsoleNetworkPanel(),
+                            WRConsoleSystemInfo(),
                           ],
                         ),
                       ),
-                      Expanded(
+                      _tabController.index != 2 ? Expanded(
                         flex: 0,
                         child: TextButton(
                           onPressed: () {
                             if(_tabController.index == 0) {
-                              Provider.of<WRConsoleGlobalProvider>(context, listen: false)?.clearConsoleLog();
+                              _globalProvider?.clearConsoleLog();
                             }else{
-                              Provider.of<WRConsoleGlobalProvider>(context, listen: false)?.clearNetworkLog();
+                              _globalProvider?.clearNetworkLog();
                             }
                           },
                           child:  Container(
@@ -108,7 +119,7 @@ class _WRConsolePanelState extends State<WRConsolePanel> {
                             child: Icon(Icons.delete_forever),
                           ),
                         ),
-                      ),
+                      ) : Container(),
                     ],
                   ),
                   ),
@@ -119,5 +130,11 @@ class _WRConsolePanelState extends State<WRConsolePanel> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
   }
 }

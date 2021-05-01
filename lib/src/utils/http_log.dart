@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:provider/provider.dart';
 import 'package:wrconsole/src/provider/global_provider.dart';
+import 'package:wrconsole/wrconsole.dart';
 
 import 'console_static.dart';
 
@@ -14,24 +15,23 @@ class WRConsoleLoggingInterceptor extends Interceptor{
 
   @override
   Future onResponse(Response response) {
-    print("WRConsole: <-- ${response.statusCode} ${response.request.method} ${response.request.path}");
-    print('WRConsole: ${response.data.toString()}');
-    print("WRConsole: <-- END HTTP");
     if(WRConsoleStatic.context != null) {
       try {
         Provider.of<WRConsoleGlobalProvider>(WRConsoleStatic.context, listen: false).setNetworkLog(response);
       } catch (e) {
         print(e);
       }
+    }else {
+      WRConsoleStatic.setBeforeNetwork(response);
     }
     return super.onResponse(response);
   }
 
   @override
   Future onError(DioError err) {
-    print("WRConsole: <-- Error -->");
-    print(err.error);
-    print(err.message);
+    WRPrint.error("WRConsole: <-- Error -->");
+    WRPrint.error(err.error);
+    WRPrint.error(err.message);
     return super.onError(err);
   }
 }

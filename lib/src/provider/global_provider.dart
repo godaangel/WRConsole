@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:wrconsole/src/models/log_model.dart';
+import 'package:wrconsole/src/utils/console_static.dart';
 
 part 'global_provider_impl.dart';
 
@@ -25,5 +26,9 @@ abstract class WRConsoleGlobalProvider extends ChangeNotifier {
   void setNetworkLog(Response value);
   /// 清空network面板
   void clearNetworkLog();
+  int get networkLength => _httpLog.length;
+
+  /// 处理初始化之前遗漏的消息
+  void insertInitLog();
 
 }

@@ -8,6 +8,7 @@ import 'package:wrconsole/wrconsole.dart';
 import 'provider/global_provider.dart';
 import 'utils/console_static.dart';
 import 'widget/suspension_button.dart';
+import 'package:flutter/widgets.dart';
 
 class WRConsole {
   static OverlayEntry _overlayEntry;
@@ -16,11 +17,33 @@ class WRConsole {
   static Dio _dio;
   static Size _screenSize;
 
-  static Future<void> show(BuildContext context, {Dio dio}) async {
+  /// 启动app和日志监控
+  static void runApp(Widget app) {
+    runZonedGuarded(
+      () {
+        WRConsoleWidgetsFlutterBinding.ensureInitialized();
+        WRConsoleWidgetsFlutterBinding.instance.runApp(app);
+      },
+      // 处理Zone中的未捕获异常
+      (Object error, StackTrace stack) async {
+        WRPrint.error(error);
+      },
+      // 拦截日志输出
+      zoneSpecification: ZoneSpecification(
+        print: (Zone self, ZoneDelegate parent, Zone zone, String line) async {
+          WRPrint.log(line);
+        },
+      ),
+    );
+  }
+
+  /// 初始化调试工具
+  static Future<void> init(BuildContext context, {Dio dio}) async {
     Completer<void> consoleCompleter = Completer();
     _context = context;
     _wrConsoleGlobalProvider = WRConsoleGlobalProviderImpl();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      /// 初始化按钮位置
       _screenSize = MediaQuery.of(context).size;
       double right = _screenSize.width - 70;
       double bottom = (_screenSize.height + 60) * 2 / 3;
@@ -35,6 +58,7 @@ class WRConsole {
     return consoleCompleter.future;
   }
 
+  /// 关闭和销毁调试工具
   static dispose() {
     _dio?.interceptors?.clear();
     _overlayEntry?.remove();
@@ -42,6 +66,7 @@ class WRConsole {
     WRConsoleStatic.context = null;
   }
 
+  /// 添加悬浮按钮
   static _addOverlayEntry(double left, double top) {
     try {
       _overlayEntry?.remove();

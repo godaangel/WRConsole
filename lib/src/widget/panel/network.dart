@@ -14,13 +14,23 @@ class WRConsoleNetworkPanel extends StatefulWidget {
   _WRConsoleNetworkPanelState createState() => _WRConsoleNetworkPanelState();
 }
 
-class _WRConsoleNetworkPanelState extends State<WRConsoleNetworkPanel> {
+class _WRConsoleNetworkPanelState extends State<WRConsoleNetworkPanel> with WidgetsBindingObserver {
   ScrollController _controller = ScrollController();
 
   @override
-  Widget build(BuildContext context) {
-    Timer(Duration(milliseconds: 300),
+  void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      if(_controller.hasClients) {
+        Timer(Duration(milliseconds: 300),
           () => _controller.animateTo(_controller.position.maxScrollExtent, duration: Duration(milliseconds: 300), curve: Curves.easeInOut));
+      }
+    });
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    
     return Container(
       alignment: Alignment.topLeft,
       child: Selector<WRConsoleGlobalProvider, List<Response>>(
@@ -108,7 +118,7 @@ class WRConsoleNetworkPanelItem extends StatelessWidget {
             title: Text('Request Payload', style: Theme.of(context).textTheme.subtitle1,),
             children: [
               NetWorkItem(
-                child: JsonViewerRoot(jsonObj: _method == 'GET' ? item.request.queryParameters : item.request.data),
+                child: JsonViewerWidget(_method == 'GET' ? item.request.queryParameters : item.request.data),
               ),
               SizedBox(height: 5,),
             ],
@@ -117,7 +127,7 @@ class WRConsoleNetworkPanelItem extends StatelessWidget {
             title: Text('Response Preview', style: Theme.of(context).textTheme.subtitle1,),
             children: [
               NetWorkItem(
-                child: JsonViewerRoot(jsonObj: item.data),
+                child: JsonViewerWidget(item.data),
               ),
               SizedBox(height: 5,),
             ],

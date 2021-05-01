@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wrconsole/src/provider/global_provider.dart';
-import 'package:wrconsole/src/widget/panel.dart';
+import 'package:wrconsole/src/views/panel.dart';
 
 class SuspenSionButton extends StatefulWidget {
   /// 悬浮按钮
