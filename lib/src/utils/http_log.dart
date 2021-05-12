@@ -33,7 +33,8 @@ class WRConsoleLoggingInterceptor extends Interceptor{
     WRPrint.error(err.error);
     WRPrint.error(err.message);
     try {
-      Provider.of<WRConsoleGlobalProvider>(WRConsoleStatic.context, listen: false).setNetworkLog(err.response);
+      Response _res = err.response ?? Response(request: err.request);
+      Provider.of<WRConsoleGlobalProvider>(WRConsoleStatic.context, listen: false).setNetworkLog(_res);
     } catch (e) {
       // print(e);
     }

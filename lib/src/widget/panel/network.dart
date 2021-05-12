@@ -69,6 +69,11 @@ class WRConsoleNetworkPanelItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if(item?.request == null) {
+      print(item);
+      return Container();
+    }
+
     String _url = item.request.path;
     String _urlFirst = _url.substring(0, _url.lastIndexOf('/'));
     String _urlLast = _url.substring(_url.lastIndexOf('/') + 1, _url.length);
@@ -127,7 +132,7 @@ class WRConsoleNetworkPanelItem extends StatelessWidget {
             title: Text('Response Preview', style: Theme.of(context).textTheme.subtitle1,),
             children: [
               NetWorkItem(
-                child: JsonViewerWidget(item.data),
+                child: JsonViewerWidget(item.data ?? {}),
               ),
               SizedBox(height: 5,),
             ],
@@ -138,6 +143,9 @@ class WRConsoleNetworkPanelItem extends StatelessWidget {
   }
 
   List<Widget> genResponseHeader() {
+    if(item.headers == null) {
+      return [];
+    }
     List<Widget> _list = [];
     item.headers.map.forEach((key, value) {
       _list.add(NetWorkItem(
