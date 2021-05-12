@@ -118,7 +118,7 @@ class WRConsoleNetworkPanelItem extends StatelessWidget {
             title: Text('Request Payload', style: Theme.of(context).textTheme.subtitle1,),
             children: [
               NetWorkItem(
-                child: JsonViewerWidget(_method == 'GET' ? item.request.queryParameters : item.request.data),
+                child: JsonViewerWidget(_method == 'GET' ? item.request.queryParameters : _method == 'PATCH' ? {'FormData': item.request.data.toString()} : item.request.data),
               ),
               SizedBox(height: 5,),
             ],
