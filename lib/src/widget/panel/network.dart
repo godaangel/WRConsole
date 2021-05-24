@@ -132,7 +132,7 @@ class WRConsoleNetworkPanelItem extends StatelessWidget {
             title: Text('Response Preview', style: Theme.of(context).textTheme.subtitle1,),
             children: [
               NetWorkItem(
-                child: JsonViewerWidget(item.data ?? {}),
+                child: JsonViewerWidget((item.data != null && item.data is Map) ? item.data : {}),
               ),
               SizedBox(height: 5,),
             ],
